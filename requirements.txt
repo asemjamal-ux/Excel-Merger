@@ -1,0 +1,13 @@
+# Excel Merger — dependencies
+# Install with: pip install -r requirements.txt
+
+# Web application
+flask>=3.1.0
+
+# Data processing
+pandas>=2.2.3
+openpyxl>=3.1.5   # .xlsx / .xlsm / .xlsb read & write
+xlrd>=2.0.1       # .xls (legacy Excel 97–2003) read
+
+# Desktop GUI version (excel_merger.py only)
+customtkinter>=5.2.2
