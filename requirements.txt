@@ -3,6 +3,7 @@
 
 # Web application
 flask>=3.1.0
+gunicorn>=23.0.0  # WSGI server for production (Render.com / any Linux host)
 
 # Data processing
 pandas>=2.2.3
