@@ -1,0 +1,1281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Excel Merger</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+
+<style>
+/* ═══════════════════════════════════════════════════════════
+   TOKENS
+═══════════════════════════════════════════════════════════ */
+:root {
+  --bg:           #06070A;
+  --surface:      #0D0F14;
+  --card:         #111318;
+  --border:       #1C1F28;
+  --border-hi:    #282D3C;
+  --accent:       #F97316;
+  --accent-2:     #FB923C;
+  --accent-dim:   rgba(249,115,22,.10);
+  --accent-glow:  rgba(249,115,22,.35);
+  --green:        #22C55E;
+  --green-dim:    rgba(34,197,94,.12);
+  --red:          #EF4444;
+  --yellow:       #FBBF24;
+  --blue:         #60A5FA;
+  --text:         #ECE9FF;
+  --text-2:       #9490B0;
+  --text-3:       #4A4760;
+  --font-ui:      'Syne', sans-serif;
+  --font-mono:    'JetBrains Mono', monospace;
+  --r:            14px;
+  --r-sm:         8px;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   RESET
+═══════════════════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-ui);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+
+/* dot-grid atmosphere */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: radial-gradient(circle, #1C1F2A 1px, transparent 1px);
+  background-size: 30px 30px;
+  opacity: .45;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   LAYOUT
+═══════════════════════════════════════════════════════════ */
+.page {
+  position: relative;
+  z-index: 1;
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 0 20px 80px;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   HEADER
+═══════════════════════════════════════════════════════════ */
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 28px 0 36px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 40px;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.logo-icon {
+  width: 42px; height: 42px;
+  background: var(--accent);
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 0 20px var(--accent-glow);
+  flex-shrink: 0;
+}
+
+.logo-icon svg { width: 22px; height: 22px; fill: #fff; }
+
+.logo-text h1 {
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: -.02em;
+  line-height: 1;
+  color: var(--text);
+}
+
+.logo-text p {
+  font-size: .75rem;
+  color: var(--text-2);
+  margin-top: 3px;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.badge {
+  font-family: var(--font-mono);
+  font-size: .7rem;
+  color: var(--accent);
+  border: 1px solid rgba(249,115,22,.3);
+  padding: 4px 10px;
+  border-radius: 100px;
+  letter-spacing: .06em;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SECTION LABELS
+═══════════════════════════════════════════════════════════ */
+.sec-label {
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.sec-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   DROP ZONE
+═══════════════════════════════════════════════════════════ */
+.dropzone-wrap { margin-bottom: 28px; }
+
+.dropzone {
+  position: relative;
+  border: 2px dashed var(--border-hi);
+  border-radius: var(--r);
+  background: var(--card);
+  padding: 52px 32px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color .25s, background .25s, box-shadow .25s;
+  overflow: hidden;
+}
+
+.dropzone::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 0%, rgba(249,115,22,.06) 0%, transparent 70%);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .3s;
+}
+
+.dropzone:hover,
+.dropzone.drag-over {
+  border-color: var(--accent);
+  background: #12140A;
+  box-shadow: 0 0 0 1px var(--accent), 0 0 50px var(--accent-glow), inset 0 0 60px rgba(249,115,22,.04);
+}
+
+.dropzone:hover::after,
+.dropzone.drag-over::after { opacity: 1; }
+
+.dropzone.drag-over .dz-icon { transform: scale(1.12) translateY(-4px); }
+
+.dz-icon {
+  width: 56px; height: 56px;
+  margin: 0 auto 18px;
+  background: var(--surface);
+  border: 1px solid var(--border-hi);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  transition: transform .3s cubic-bezier(.34,1.56,.64,1);
+}
+.dz-icon svg { width: 26px; height: 26px; stroke: var(--accent); }
+
+.dz-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+
+.dz-sub {
+  font-size: .82rem;
+  color: var(--text-2);
+  margin-bottom: 20px;
+}
+
+.dz-formats {
+  display: inline-flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.dz-fmt {
+  font-family: var(--font-mono);
+  font-size: .67rem;
+  padding: 3px 9px;
+  border-radius: 100px;
+  background: var(--surface);
+  border: 1px solid var(--border-hi);
+  color: var(--text-2);
+  letter-spacing: .04em;
+}
+
+#file-input { display: none; }
+
+/* ═══════════════════════════════════════════════════════════
+   FILE CHIPS
+═══════════════════════════════════════════════════════════ */
+.file-list-wrap { margin-bottom: 28px; display: none; }
+.file-list-wrap.visible { display: block; }
+
+/* Virtual scroll shell */
+.file-list-scroll {
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  transition: height .25s ease;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-hi) transparent;
+}
+.file-list-scroll::-webkit-scrollbar { width: 4px; }
+.file-list-scroll::-webkit-scrollbar-track { background: transparent; }
+.file-list-scroll::-webkit-scrollbar-thumb {
+  background: var(--border-hi);
+  border-radius: 100px;
+}
+/* Spacers + shelf all live in normal flow — total height = N × ITEM_H */
+#vl-top, #vl-bot { display: block; flex-shrink: 0; }
+.file-list-shelf  { display: block; }
+
+/* Fixed height — virtual scroll math depends on this being exact */
+.file-chip {
+  height: 54px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  padding: 0 14px;
+  box-sizing: border-box;
+}
+.file-chip:last-child { border-bottom: none; }
+
+.chip-icon {
+  width: 32px; height: 32px;
+  background: var(--accent-dim);
+  border-radius: 6px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+.chip-icon svg { width: 16px; height: 16px; stroke: var(--accent); }
+
+.chip-info { flex: 1; min-width: 0; }
+.chip-name {
+  font-size: .85rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text);
+}
+.chip-size {
+  font-family: var(--font-mono);
+  font-size: .7rem;
+  color: var(--text-3);
+}
+
+.chip-remove {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-3);
+  padding: 4px;
+  border-radius: 4px;
+  transition: color .2s, background .2s;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+.chip-remove:hover { color: var(--red); background: rgba(239,68,68,.1); }
+.chip-remove svg { width: 14px; height: 14px; stroke: currentColor; }
+
+.file-list-footer {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.file-count-badge {
+  font-family: var(--font-mono);
+  font-size: .72rem;
+  color: var(--text-2);
+}
+.add-more-btn {
+  font-size: .78rem;
+  font-weight: 600;
+  font-family: var(--font-ui);
+  color: var(--accent);
+  background: none;
+  border: 1px dashed rgba(249,115,22,.35);
+  border-radius: var(--r-sm);
+  padding: 5px 14px;
+  cursor: pointer;
+  transition: background .2s, border-color .2s;
+}
+.add-more-btn:hover { background: var(--accent-dim); border-color: var(--accent); }
+
+/* ═══════════════════════════════════════════════════════════
+   OPTIONS GRID
+═══════════════════════════════════════════════════════════ */
+.options-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+@media (max-width: 600px) {
+  .options-grid { grid-template-columns: 1fr; }
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 20px;
+}
+
+.field { margin-bottom: 14px; }
+.field:last-child { margin-bottom: 0; }
+
+label.field-label {
+  display: block;
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--text-2);
+  margin-bottom: 7px;
+}
+
+input[type="text"],
+input[type="number"] {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border-hi);
+  border-radius: var(--r-sm);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: .88rem;
+  padding: 9px 13px;
+  outline: none;
+  transition: border-color .2s, box-shadow .2s;
+}
+
+input[type="text"]:focus,
+input[type="number"]:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-dim);
+}
+
+input::placeholder { color: var(--text-3); }
+
+.field-hint {
+  font-size: .72rem;
+  color: var(--text-3);
+  margin-top: 5px;
+  font-family: var(--font-mono);
+}
+
+/* custom toggle switches */
+.toggle-field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 13px 0;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  user-select: none;
+}
+.toggle-field:last-child { border-bottom: none; padding-bottom: 0; }
+.toggle-field:first-of-type { padding-top: 0; }
+
+.toggle-label-wrap { flex: 1; }
+.toggle-title {
+  font-size: .88rem;
+  font-weight: 600;
+  color: var(--text);
+}
+.toggle-desc {
+  font-size: .74rem;
+  color: var(--text-3);
+  margin-top: 2px;
+}
+
+.toggle {
+  position: relative;
+  width: 40px;
+  height: 22px;
+  flex-shrink: 0;
+  margin-left: 16px;
+}
+.toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
+.toggle-track {
+  position: absolute;
+  inset: 0;
+  background: var(--border-hi);
+  border-radius: 100px;
+  transition: background .25s;
+}
+.toggle-thumb {
+  position: absolute;
+  left: 3px;
+  top: 3px;
+  width: 16px;
+  height: 16px;
+  background: var(--text-3);
+  border-radius: 50%;
+  transition: transform .25s cubic-bezier(.34,1.56,.64,1), background .25s;
+}
+.toggle input:checked ~ .toggle-track { background: var(--accent); }
+.toggle input:checked ~ .toggle-thumb {
+  transform: translateX(18px);
+  background: #fff;
+  box-shadow: 0 0 8px var(--accent-glow);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   MERGE BUTTON
+═══════════════════════════════════════════════════════════ */
+.merge-btn-wrap { margin-bottom: 20px; }
+
+#merge-btn {
+  width: 100%;
+  padding: 15px 24px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--r);
+  font-family: var(--font-ui);
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: .04em;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  position: relative;
+  overflow: hidden;
+  transition: background .2s, box-shadow .2s, transform .15s;
+  box-shadow: 0 4px 24px var(--accent-glow);
+}
+
+#merge-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,.12) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+#merge-btn:hover:not(:disabled) {
+  background: var(--accent-2);
+  box-shadow: 0 6px 32px var(--accent-glow);
+  transform: translateY(-1px);
+}
+
+#merge-btn:active:not(:disabled) { transform: translateY(0); }
+
+#merge-btn:disabled {
+  opacity: .65;
+  cursor: not-allowed;
+  transform: none;
+}
+
+#merge-btn svg { width: 20px; height: 20px; stroke: #fff; flex-shrink: 0; }
+
+.spinner {
+  width: 18px; height: 18px;
+  border: 2px solid rgba(255,255,255,.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+  flex-shrink: 0;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ═══════════════════════════════════════════════════════════
+   PROGRESS
+═══════════════════════════════════════════════════════════ */
+.progress-wrap {
+  height: 4px;
+  background: var(--border);
+  border-radius: 100px;
+  margin-bottom: 28px;
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity .3s;
+}
+.progress-wrap.active { opacity: 1; }
+.progress-bar {
+  height: 100%;
+  width: 40%;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  border-radius: 100px;
+  animation: slide 1.4s ease-in-out infinite;
+}
+@keyframes slide {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(300%); }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   LOG TERMINAL
+═══════════════════════════════════════════════════════════ */
+.log-wrap {
+  margin-bottom: 24px;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity .4s, transform .4s;
+}
+.log-wrap.visible { opacity: 1; transform: none; }
+
+.log-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.log-clear {
+  font-size: .72rem;
+  font-weight: 600;
+  color: var(--text-3);
+  background: none;
+  border: 1px solid var(--border-hi);
+  border-radius: 6px;
+  padding: 3px 10px;
+  cursor: pointer;
+  font-family: var(--font-ui);
+  transition: color .2s, border-color .2s;
+}
+.log-clear:hover { color: var(--text); border-color: var(--text-3); }
+
+.log-terminal {
+  background: #050608;
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 18px;
+  height: 220px;
+  overflow-y: auto;
+  font-family: var(--font-mono);
+  font-size: .78rem;
+  line-height: 1.7;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-hi) transparent;
+}
+.log-terminal::-webkit-scrollbar { width: 5px; }
+.log-terminal::-webkit-scrollbar-track { background: transparent; }
+.log-terminal::-webkit-scrollbar-thumb { background: var(--border-hi); border-radius: 100px; }
+
+.log-entry {
+  animation: logFade .2s ease both;
+}
+@keyframes logFade {
+  from { opacity:0; transform: translateX(-6px); }
+  to   { opacity:1; transform: none; }
+}
+
+.log-entry.k-head { color: var(--text); font-weight: 500; }
+.log-entry.k-meta { color: var(--text-3); }
+.log-entry.k-file { color: var(--accent-2); }
+.log-entry.k-ok   { color: var(--green); }
+.log-entry.k-info { color: var(--blue); }
+.log-entry.k-warn { color: var(--yellow); }
+.log-entry.k-err  { color: var(--red); }
+.log-entry.k-div  {
+  color: var(--border-hi);
+  border-top: 1px solid var(--border);
+  margin: 6px 0;
+}
+
+/* blinking cursor at end */
+.log-cursor {
+  display: inline-block;
+  width: 7px; height: 13px;
+  background: var(--accent);
+  vertical-align: middle;
+  border-radius: 1px;
+  animation: blink 1s step-end infinite;
+  margin-left: 2px;
+}
+@keyframes blink { 50% { opacity: 0; } }
+
+/* ═══════════════════════════════════════════════════════════
+   RESULT CARD
+═══════════════════════════════════════════════════════════ */
+.result-wrap {
+  opacity: 0;
+  transform: scale(.97) translateY(12px);
+  transition: opacity .5s cubic-bezier(.34,1.56,.64,1), transform .5s cubic-bezier(.34,1.56,.64,1);
+  pointer-events: none;
+}
+.result-wrap.visible {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+}
+
+.result-card {
+  background: var(--card);
+  border: 1px solid var(--green);
+  border-radius: var(--r);
+  padding: 24px 28px;
+  box-shadow: 0 0 40px rgba(34,197,94,.1);
+}
+
+.result-top {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.result-check {
+  width: 40px; height: 40px;
+  background: var(--green-dim);
+  border: 1px solid rgba(34,197,94,.3);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+.result-check svg { width: 20px; height: 20px; stroke: var(--green); }
+
+.result-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text);
+}
+.result-sub {
+  font-size: .78rem;
+  color: var(--text-2);
+  margin-top: 2px;
+}
+
+.result-stats {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 22px;
+  flex-wrap: wrap;
+}
+.stat {
+  flex: 1;
+  min-width: 100px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: 12px 16px;
+}
+.stat-value {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--green);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.stat-label {
+  font-size: .7rem;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  margin-top: 4px;
+  font-weight: 600;
+}
+
+#download-btn {
+  width: 100%;
+  padding: 13px;
+  background: var(--green-dim);
+  color: var(--green);
+  border: 1px solid rgba(34,197,94,.3);
+  border-radius: var(--r-sm);
+  font-family: var(--font-ui);
+  font-size: .92rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: background .2s, border-color .2s, box-shadow .2s;
+}
+#download-btn:hover {
+  background: rgba(34,197,94,.18);
+  border-color: var(--green);
+  box-shadow: 0 0 20px rgba(34,197,94,.15);
+}
+#download-btn svg { width: 18px; height: 18px; stroke: currentColor; }
+
+/* ═══════════════════════════════════════════════════════════
+   ERROR TOAST
+═══════════════════════════════════════════════════════════ */
+.toast {
+  position: fixed;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  background: #1C0E0E;
+  border: 1px solid rgba(239,68,68,.4);
+  border-radius: var(--r-sm);
+  color: var(--red);
+  font-size: .85rem;
+  font-weight: 600;
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  z-index: 9999;
+  transition: transform .35s cubic-bezier(.34,1.56,.64,1), opacity .35s;
+  opacity: 0;
+  max-width: 480px;
+  width: calc(100% - 40px);
+}
+.toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+.toast svg { width: 16px; height: 16px; stroke: currentColor; flex-shrink: 0; }
+
+/* ═══════════════════════════════════════════════════════════
+   UTILITY
+═══════════════════════════════════════════════════════════ */
+.hidden { display: none !important; }
+</style>
+</head>
+
+<body>
+<div class="page">
+
+  <!-- ── HEADER ─────────────────────────────────────────────── -->
+  <header>
+    <div class="logo">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8" style="fill:none;stroke:#fff;stroke-width:1.5"/>
+          <line x1="8" y1="13" x2="16" y2="13" style="stroke:#fff;stroke-width:1.5"/>
+          <line x1="8" y1="17" x2="16" y2="17" style="stroke:#fff;stroke-width:1.5"/>
+          <polyline points="10 9 9 9 8 9" style="stroke:#fff;stroke-width:1.5"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <h1>Excel Merger</h1>
+        <p>Combine · Clean · Export</p>
+      </div>
+    </div>
+    <span class="badge">v2.0 By Asim Abdulsamad</span>
+  </header>
+
+  <!-- ── DROP ZONE ──────────────────────────────────────────── -->
+  <div class="dropzone-wrap">
+    <div class="sec-label">Upload Files</div>
+
+    <div class="dropzone" id="dropzone">
+      <div class="dz-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="16 16 12 12 8 16"/>
+          <line x1="12" y1="12" x2="12" y2="21"/>
+          <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/>
+        </svg>
+      </div>
+      <div class="dz-title">Drop your Excel files here</div>
+      <div class="dz-sub">or click anywhere in this zone to browse</div>
+      <div class="dz-formats">
+        <span class="dz-fmt">.xlsx</span>
+        <span class="dz-fmt">.xls</span>
+        <span class="dz-fmt">.xlsm</span>
+        <span class="dz-fmt">.xlsb</span>
+      </div>
+    </div>
+    <input type="file" id="file-input" multiple accept=".xlsx,.xls,.xlsm,.xlsb">
+  </div>
+
+  <!-- ── FILE LIST ──────────────────────────────────────────── -->
+  <div class="file-list-wrap" id="file-list-wrap">
+    <div class="sec-label">Selected Files</div>
+    <div class="file-list" id="file-list"></div>
+    <div class="file-list-footer">
+      <span class="file-count-badge" id="file-count"></span>
+      <button class="add-more-btn" id="add-more-btn">+ Add more files</button>
+    </div>
+  </div>
+
+  <!-- ── OPTIONS ────────────────────────────────────────────── -->
+  <div class="options-grid">
+
+    <div class="card">
+      <div class="sec-label" style="margin-bottom:18px">Sheet Options</div>
+
+      <div class="field">
+        <label class="field-label" for="sheet-name">Sheet Name</label>
+        <input type="text" id="sheet-name" placeholder="Leave empty → first sheet">
+        <div class="field-hint">name or index, e.g. Sheet1 or 0</div>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="skip-rows">Skip Rows</label>
+        <input type="number" id="skip-rows" value="0" min="0" max="999">
+        <div class="field-hint">rows to skip before the header</div>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="skip-cols">Skip Columns</label>
+        <input type="text" id="skip-cols" placeholder="e.g. A,C  or  0,2  or  Name,Date">
+        <div class="field-hint">comma-separated letters, indexes, or names</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="sec-label" style="margin-bottom:18px">Data Cleaning</div>
+
+      <label class="toggle-field" for="dedup">
+        <div class="toggle-label-wrap">
+          <div class="toggle-title">Remove Duplicates</div>
+          <div class="toggle-desc">Drop rows identical across all data columns</div>
+        </div>
+        <div class="toggle">
+          <input type="checkbox" id="dedup">
+          <div class="toggle-track"></div>
+          <div class="toggle-thumb"></div>
+        </div>
+      </label>
+
+      <label class="toggle-field" for="drop-empty">
+        <div class="toggle-label-wrap">
+          <div class="toggle-title">Drop Empty Rows</div>
+          <div class="toggle-desc">Remove rows where every cell is blank</div>
+        </div>
+        <div class="toggle">
+          <input type="checkbox" id="drop-empty">
+          <div class="toggle-track"></div>
+          <div class="toggle-thumb"></div>
+        </div>
+      </label>
+
+      <div style="margin-top:20px;padding:14px;background:var(--surface);border-radius:var(--r-sm);border:1px solid var(--border)">
+        <div style="font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-3);margin-bottom:8px">Output</div>
+        <div style="font-size:.82rem;color:var(--text-2);line-height:1.6">
+          The merged file will contain a <span style="color:var(--accent);font-family:var(--font-mono);font-size:.78rem">Source File</span> column as the first column, showing which file each row came from.
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── MERGE BUTTON ───────────────────────────────────────── -->
+  <div class="merge-btn-wrap">
+    <button id="merge-btn" onclick="doMerge()">
+      <svg id="btn-icon" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M5 12h14M12 5l7 7-7 7"/>
+      </svg>
+      <span id="btn-text">Merge Excel Files</span>
+    </button>
+  </div>
+
+  <!-- ── PROGRESS ───────────────────────────────────────────── -->
+  <div class="progress-wrap" id="progress">
+    <div class="progress-bar"></div>
+  </div>
+
+  <!-- ── LOG ────────────────────────────────────────────────── -->
+  <div class="log-wrap" id="log-wrap">
+    <div class="log-header">
+      <div class="sec-label" style="margin-bottom:0">Activity Log</div>
+      <button class="log-clear" onclick="clearLog()">Clear</button>
+    </div>
+    <div class="log-terminal" id="log-terminal">
+      <span class="log-cursor"></span>
+    </div>
+  </div>
+
+  <!-- ── RESULT ─────────────────────────────────────────────── -->
+  <div class="result-wrap" id="result-wrap">
+    <div class="result-card">
+      <div class="result-top">
+        <div class="result-check">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+        </div>
+        <div>
+          <div class="result-title">Merge Complete</div>
+          <div class="result-sub" id="result-sub">Files merged successfully</div>
+        </div>
+      </div>
+
+      <div class="result-stats">
+        <div class="stat">
+          <div class="stat-value" id="stat-rows">—</div>
+          <div class="stat-label">Total Rows</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value" id="stat-files">—</div>
+          <div class="stat-label">Files Merged</div>
+        </div>
+        <div class="stat" id="stat-errors-wrap">
+          <div class="stat-value" id="stat-errors" style="color:var(--yellow)">—</div>
+          <div class="stat-label">With Errors</div>
+        </div>
+      </div>
+
+      <button id="download-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/>
+          <line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        Download merged_output.xlsx
+      </button>
+    </div>
+  </div>
+
+</div><!-- /.page -->
+
+<!-- ── TOAST ──────────────────────────────────────────────── -->
+<div class="toast" id="toast">
+  <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round">
+    <circle cx="12" cy="12" r="10"/>
+    <line x1="12" y1="8" x2="12" y2="12"/>
+    <line x1="12" y1="16" x2="12.01" y2="16"/>
+  </svg>
+  <span id="toast-msg"></span>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════════════════════ */
+let selectedFiles = [];   // File objects
+let downloadToken = null;
+
+/* ═══════════════════════════════════════════════════════════
+   DROP ZONE
+═══════════════════════════════════════════════════════════ */
+const dropzone   = document.getElementById('dropzone');
+const fileInput  = document.getElementById('file-input');
+
+dropzone.addEventListener('click', () => fileInput.click());
+
+fileInput.addEventListener('change', e => {
+  addFiles([...e.target.files]);
+  fileInput.value = '';
+});
+
+document.getElementById('add-more-btn').addEventListener('click', () => fileInput.click());
+
+dropzone.addEventListener('dragover', e => {
+  e.preventDefault();
+  dropzone.classList.add('drag-over');
+});
+dropzone.addEventListener('dragleave', e => {
+  if (!dropzone.contains(e.relatedTarget)) dropzone.classList.remove('drag-over');
+});
+dropzone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropzone.classList.remove('drag-over');
+  const files = [...e.dataTransfer.files].filter(f => /\.(xlsx|xls|xlsm|xlsb)$/i.test(f.name));
+  if (files.length) addFiles(files);
+  else showToast('Please drop Excel files (.xlsx, .xls, .xlsm, .xlsb)');
+});
+
+/* ═══════════════════════════════════════════════════════════
+   FILE MANAGEMENT  (virtual scroll)
+═══════════════════════════════════════════════════════════ */
+const VS_ITEM_H = 54;   // px — must match .file-chip height exactly
+const VS_ROWS   = 6;    // max visible rows; beyond this, scroll kicks in
+const VS_BUF    = 3;    // extra rows rendered above/below to prevent flicker
+
+let _vsEl = null;       // the .file-list-scroll DOM node (built once, reused)
+
+function addFiles(newFiles) {
+  const existingNames = new Set(selectedFiles.map(f => f.name));
+  newFiles.forEach(f => {
+    if (!existingNames.has(f.name)) {
+      selectedFiles.push(f);
+      existingNames.add(f.name);
+    }
+  });
+  renderFileList();
+}
+
+function removeFile(name) {
+  selectedFiles = selectedFiles.filter(f => f.name !== name);
+  if (!selectedFiles.length) {
+    _vsEl = null;
+    document.getElementById('file-list').innerHTML = '';
+  }
+  renderFileList();
+}
+
+function renderFileList() {
+  const wrap  = document.getElementById('file-list-wrap');
+  const count = document.getElementById('file-count');
+
+  if (!selectedFiles.length) {
+    wrap.classList.remove('visible');
+    _vsEl = null;
+    return;
+  }
+
+  wrap.classList.add('visible');
+  count.textContent =
+    `${selectedFiles.length} file${selectedFiles.length !== 1 ? 's' : ''} selected`;
+
+  // Build the scroll shell once; reuse on every subsequent call
+  const root = document.getElementById('file-list');
+  if (!_vsEl) {
+    root.innerHTML = '';
+
+    _vsEl = document.createElement('div');
+    _vsEl.className = 'file-list-scroll';
+
+    // Three normal-flow children: top spacer | visible chips | bottom spacer
+    // Their combined height always equals (total files × VS_ITEM_H)
+    const topSp = document.createElement('div');
+    topSp.id = 'vl-top';
+
+    const shelf = document.createElement('div');
+    shelf.id = 'vl-shelf';
+    shelf.className = 'file-list-shelf';
+
+    const botSp = document.createElement('div');
+    botSp.id = 'vl-bot';
+
+    _vsEl.appendChild(topSp);
+    _vsEl.appendChild(shelf);
+    _vsEl.appendChild(botSp);
+    root.appendChild(_vsEl);
+
+    _vsEl.addEventListener('scroll', vsRender, { passive: true });
+  }
+
+  // Container grows up to VS_ROWS tall, then becomes scrollable
+  _vsEl.style.height = `${Math.min(selectedFiles.length, VS_ROWS) * VS_ITEM_H}px`;
+
+  vsRender();
+}
+
+function vsRender() {
+  if (!_vsEl) return;
+  const total = selectedFiles.length;
+  const topSp = document.getElementById('vl-top');
+  const shelf = document.getElementById('vl-shelf');
+  const botSp = document.getElementById('vl-bot');
+  if (!topSp || !shelf || !botSp) return;
+
+  const st      = _vsEl.scrollTop;
+  const visRows = Math.min(total, VS_ROWS);
+  // Render VS_BUF extra rows above and below the visible window
+  const start = Math.max(0, Math.floor(st / VS_ITEM_H) - VS_BUF);
+  const end   = Math.min(total - 1, start + visRows + VS_BUF * 2);
+
+  // Spacers fill the invisible space so total scroll height = N × VS_ITEM_H
+  topSp.style.height = `${start * VS_ITEM_H}px`;
+  botSp.style.height = `${Math.max(0, total - end - 1) * VS_ITEM_H}px`;
+
+  shelf.innerHTML = '';
+  for (let i = start; i <= end; i++) shelf.appendChild(makeChip(selectedFiles[i]));
+}
+
+function makeChip(f) {
+  const div = document.createElement('div');
+  div.className = 'file-chip';
+  div.innerHTML = `
+    <div class="chip-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+        <polyline points="14 2 14 8 20 8"/>
+      </svg>
+    </div>
+    <div class="chip-info">
+      <div class="chip-name" title="${escHtml(f.name)}">${escHtml(f.name)}</div>
+      <div class="chip-size">${formatBytes(f.size)}</div>
+    </div>
+    <button class="chip-remove" title="Remove" onclick="removeFile('${escHtml(f.name)}')">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round">
+        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
+  `;
+  return div;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   MERGE
+═══════════════════════════════════════════════════════════ */
+async function doMerge() {
+  if (!selectedFiles.length) {
+    showToast('Please select at least one Excel file first.');
+    return;
+  }
+
+  const btn     = document.getElementById('merge-btn');
+  const btnIcon = document.getElementById('btn-icon');
+  const btnText = document.getElementById('btn-text');
+  const progress = document.getElementById('progress');
+
+  // Reset result
+  document.getElementById('result-wrap').classList.remove('visible');
+  downloadToken = null;
+
+  // Loading state
+  btn.disabled = true;
+  btnIcon.outerHTML = '<div class="spinner" id="btn-icon"></div>';
+  btnText.textContent = 'Merging…';
+  progress.classList.add('active');
+
+  // Show log
+  const logWrap = document.getElementById('log-wrap');
+  logWrap.classList.add('visible');
+  clearLog();
+
+  const form = new FormData();
+  selectedFiles.forEach(f => form.append('files', f));
+  form.append('sheet_name',        document.getElementById('sheet-name').value);
+  form.append('skip_rows',         document.getElementById('skip-rows').value);
+  form.append('skip_cols',         document.getElementById('skip-cols').value);
+  form.append('remove_duplicates', document.getElementById('dedup').checked ? 'true' : 'false');
+  form.append('drop_empty',        document.getElementById('drop-empty').checked ? 'true' : 'false');
+
+  try {
+    const res  = await fetch('/merge', { method: 'POST', body: form });
+    const data = await res.json();
+
+    displayLog(data.log || []);
+
+    if (data.success) {
+      downloadToken = data.token;
+      setTimeout(() => showResult(data), (data.log?.length || 0) * 55 + 200);
+    } else {
+      showToast(data.error || 'Merge failed. Check the log for details.');
+    }
+
+  } catch (err) {
+    showToast(`Network error: ${err.message}`);
+  } finally {
+    progress.classList.remove('active');
+
+    // Restore button
+    btn.disabled = false;
+    const spinner = document.getElementById('btn-icon');
+    if (spinner) {
+      spinner.outerHTML = `
+        <svg id="btn-icon" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M5 12h14M12 5l7 7-7 7"/>
+        </svg>`;
+    }
+    btnText.textContent = 'Merge Excel Files';
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   LOG
+═══════════════════════════════════════════════════════════ */
+function displayLog(entries) {
+  const terminal = document.getElementById('log-terminal');
+  terminal.innerHTML = '';
+
+  entries.forEach((e, i) => {
+    setTimeout(() => {
+      if (e.k === 'div') {
+        const div = document.createElement('div');
+        div.className = 'log-entry k-div';
+        terminal.appendChild(div);
+      } else {
+        const div = document.createElement('div');
+        div.className = `log-entry k-${e.k}`;
+        div.textContent = e.m;
+        terminal.appendChild(div);
+      }
+      terminal.scrollTop = terminal.scrollHeight;
+
+      // Blinking cursor at end
+      const existing = terminal.querySelector('.log-cursor');
+      if (existing) existing.remove();
+      const cursor = document.createElement('span');
+      cursor.className = 'log-cursor';
+      terminal.appendChild(cursor);
+    }, i * 55);
+  });
+}
+
+function clearLog() {
+  const terminal = document.getElementById('log-terminal');
+  terminal.innerHTML = '<span class="log-cursor"></span>';
+}
+
+/* ═══════════════════════════════════════════════════════════
+   RESULT
+═══════════════════════════════════════════════════════════ */
+function showResult(data) {
+  document.getElementById('stat-rows').textContent  = data.rows?.toLocaleString() ?? '—';
+  document.getElementById('stat-files').textContent = data.files ?? '—';
+  document.getElementById('stat-errors').textContent = data.errors ?? '0';
+
+  const errWrap = document.getElementById('stat-errors-wrap');
+  errWrap.style.display = data.errors > 0 ? '' : 'none';
+
+  document.getElementById('result-sub').textContent =
+    `${data.files} file${data.files !== 1 ? 's' : ''} merged into ${data.rows?.toLocaleString()} rows`;
+
+  document.getElementById('result-wrap').classList.add('visible');
+  document.getElementById('result-wrap').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+document.getElementById('download-btn').addEventListener('click', () => {
+  if (!downloadToken) return;
+  window.location.href = `/download/${downloadToken}`;
+});
+
+/* ═══════════════════════════════════════════════════════════
+   TOAST
+═══════════════════════════════════════════════════════════ */
+let toastTimer = null;
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  document.getElementById('toast-msg').textContent = msg;
+  toast.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 4000);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   UTILS
+═══════════════════════════════════════════════════════════ */
+function formatBytes(b) {
+  if (b < 1024) return `${b} B`;
+  if (b < 1024 * 1024) return `${(b / 1024).toFixed(1)} KB`;
+  return `${(b / 1024 / 1024).toFixed(1)} MB`;
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
+</body>
+</html>
