@@ -9,7 +9,6 @@ skip header rows, drop columns (by letter, index or name), remove duplicates, dr
 A fully static single-page app. All parsing and merging runs **in the browser** via
 [SheetJS](https://sheetjs.com); your files are never uploaded anywhere.
 
-Deployed from this repo by Netlify (`netlify.toml` → publish `public/`, no build step).
 
 ## Python versions
 
